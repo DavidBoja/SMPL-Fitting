@@ -6,7 +6,7 @@ Fit an SMPL body model (BM) to a given scan and view the optimization process in
 
 The code supports fitting a single scan 👤 or a whole dataset 👥.
 
-
+<br>
 
 https://github.com/DavidBoja/SMPL-Fitting/assets/32020857/34f3b1ce-81b8-460c-b645-fa04558bb1af
 
@@ -84,7 +84,7 @@ Dataset variables for FAUST (these are dataset specific for each dataset you imp
 
 ### 🧍‍♂️ Fit body model (BM)
 
-Optimize the body model parameters of shape and pose (including translation and scale) that best fit the given scan. Loss components include the <ins>data loss</ins> (chamfer distance), <ins>landmark loss</ins> (L2 between landmark locations) and <ins>prior losses</ins> (L2 loss for beta and gmm prior for pose [1]). Check [notes on losses](##-📝-Notes) for more details.
+Optimize the body model parameters of shape and pose (including translation and scale) that best fit the given scan. Check [notes on losses](##-📝-Notes) to see the losses used.
 
 The optimization-specific configurations to fit a BM to a scan are set under `fit_body_model_optimization` in `config.yaml` with the following variables:
 
@@ -119,7 +119,7 @@ The dataset you want to fit needs to be defined in `datasets.py` as a torch data
 
 ### 🤹 Fit vertices
 
-Optimize the vertices of a BM (or mesh) that best fit the given scan. Loss components include the <ins>data loss</ins>  (chamfer distance), <ins>smoothness loss</ins> (difference between transformations of neighboring vertices), <ins>landmark loss</ins> (L2 norm between landmark locations), <ins>normal loss</ins> (L2 distance between points with normal angle under threshold).
+Optimize the vertices of a BM (or mesh) that best fit the given scan. Check [notes on losses](##-📝-Notes) to see the losses used.
 
 The optimization-specific configuration to fit the vertices to a scan is set under `fit_vertices_optimization` in `config.yaml` with the following variables:
 
@@ -146,7 +146,7 @@ The optimization-specific configuration to fit the vertices to a scan is set und
 python fit_vertices.py onto_scan --scan_path {path-to-scan} --landmark_path {path-to-landmarks} --start_from_previous_results {path-to-YYYY_MM_DD_HH_MM_SS-folder}
 ```
 
-Check [Notes](##-📝-Notes) to see the supported scan and landmark file extensions. You can either use `--start_from_previous_results` to fit the vertices of the previously fitted BM with the `fit_body_model.py` script ( ⚠️ provide the folder where the fitted `.npz` is located ⚠️) or use `--start_from_body_model` to start fitting a BM with zero shape and pose to the scan (⚠️ results will probably be poor ⚠️). 
+Check [Notes](##-📝-Notes) to see the supported scan and landmark file extensions. You can either use `--start_from_previous_results` to fit the vertices of the previously fitted BM with the `fit_body_model.py` script ( ⚠️ provide the folder where the fitted `.npz` is located) or use `--start_from_body_model` to start fitting a BM with zero shape and pose to the scan (⚠️ results will probably be poor). 
 
 
 
@@ -155,7 +155,7 @@ Check [Notes](##-📝-Notes) to see the supported scan and landmark file extensi
 ```bash
 python fit_vertices.py onto_dataset --dataset_name {dataset-name} --start_from_previous_results {path-to-previously-fitted-bm-results}
 ```
-You can either use `--start_from_previous_results` to fit the vertices of the previously fitted BM with the `fit_body_model.py` script (⚠️ provide the folder where the fitted `.npz` are located ⚠️) or use `--start_from_body_model` to start fitting a BM with zero shape and pose to the scan (⚠️ results will be poor ⚠️).
+You can either use `--start_from_previous_results` to fit the vertices of the previously fitted BM with the `fit_body_model.py` script (⚠️ provide the folder where the fitted `.npz` are located) or use `--start_from_body_model` to start fitting a BM with zero shape and pose to the scan (⚠️ results will be poor).
 The dataset you want to fit needs to be defined in `datasets.py` as a torch dataset. Check [notes on datasets](##-📝-Notes) for more details. We already provide the FAUST dataset in `datasets.py`.
 
 <br>
@@ -165,7 +165,9 @@ The dataset you want to fit needs to be defined in `datasets.py` as a torch data
 ## ⚖️ Evaluate
 Use the `evaluate_fitting.py` script to evaluate the fitting.
 
-### pve
+<br>
+
+### evaluate per-vertex-error
 Evaluate the per vertex error (pve) which is the average euclidean distance between the given ground truth BM to the fitted BM.
 
 ```python
@@ -179,8 +181,9 @@ You can use:
 - `--select_examples` -  (list) to select a subset of examples to evaluate (only if evaluating fitting to dataset)
 - `--ground_truth_path` - (string) to set the path to the ground truth body model (only if evaluating fitting to scan)
 
+<br>
 
-### chamfer
+### evaluate chamfer distance
 Evaluate the (various definitions of) chamfer distance (CD) from the estimated body model to the scan with:
 
 ```python
@@ -216,9 +219,9 @@ You can use:
     Check [Notes](##-📝-Notes) section to find out the possible landmark definitions.
 3. Visualize fitting:
     ```bash
-    python visualization.py visualize_fitting --scan_path {path-to-scan} --fitted_npz_file {path-to-npz-file}
+    python visualization.py visualize_fitting --scan_path {path-to-scan} --fitted_npz_file {path-to-.npz-file}
     ```
-    where you get the `npz` from the fitting scripts.
+    where the `.npz` is obtained with the fitting scripts.
 
 
 <br>
@@ -238,9 +241,25 @@ The supported ways of loading landmarks for a scan are:
 
 where `x y z` indicate the coordinates of the landmark and `landmark_index` indicates the index of the scan vertex representing the landmark.
 
+<br>
+
 ### Notes on losses
-The losses used for fitting the BM:
-- 
+
+Losses for fitting the BM:
+
+- `data loss` - chamfer distance between BM and scan
+- `landmark loss` - L2 distance between BM landmarks and scan landmarks
+- `prior shape loss` - L2 norm of BM shape parameters
+- `prior pose loss` - gmm prior loss from [1]
+
+Losses for fitting the vertices:
+
+- `data loss` - directional chamfer distance from BM to scan
+- `smoothness loss` - difference between transformations of neighboring BM vertices
+- `landmark loss` - L2 distance between BM landmarks and scan landmarks
+- `normal loss` - L2 distance between points with normals within angle threshold
+
+<br>
 
 ### Notes on datasets
 
@@ -258,7 +277,9 @@ If you additionally want to evaluate the per vertex error (pve) after fitting (c
 
 We provide the FAUST and CAESAR dataset implementations in `datasets.py`. You can obtain the datasets from [here](https://faust-leaderboard.is.tuebingen.mpg.de/) and [here](https://bodysizeshape.com/page-1855750).
 
-### Supported BM
+<br>
+
+### Notes on supported BM
 
 Currently, we support the SMPL body model.
 If you want to add another BM, you can follow these steps:
@@ -276,12 +297,10 @@ Fit body model onto scan:
 python fit_body_model.py onto_scan --scan_path data/demo/tr_scan_000.ply --landmark_path data/demo/tr_scan_000_landmarks.json
 ```
 
-Fit body model onto dataset:
+Fit body model onto dataset (🚧 you need to provide the FAUST dataset files as mentioned above 🚧):
 ```bash
 python fit_body_model.py onto_dataset -D FAUST
 ```
-
-🚧 you need to provide the FAUST dataset files as mentioned above 🚧
 
 Fit the vertices of the previously fitted BM onto the scan even further:
 ```bash
@@ -322,10 +341,26 @@ python visualization.py visualize_fitting --scan_path data/demo/tr_scan_000.ply 
 
 <br>
 
-## References 
-[1] Keep it SMPL: Automatic Estimation of 3D Human Pose and Shape from a Single Image
+## Citation
+
+Please cite our work and leave a star ⭐ if you find the repository useful.
+
+```bibtex
+@misc{SMPL-Fitting,
+  author = {Bojani\'{c}, D.},
+  title = {SMPL-Fitting},
+  year = {2024},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/DavidBoja/SMPL-Fitting}},
+}
+```
 
 ## Todo
-- [ ] Implement SMPLx
+- [ ] Implement SMPLx body model
 
-🌟 Leave a star if you find this repo useful 🌟
+
+<br>
+
+## References 
+[1] Keep it SMPL: Automatic Estimation of 3D Human Pose and Shape from a Single Image
