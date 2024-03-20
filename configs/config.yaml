@@ -1,0 +1,54 @@
+
+
+fit_body_model_optimization:
+  loss_weight_option: default_option # check options in loss_weight_configs.yaml
+  iterations: 500
+  lr: 0.1
+  start_lr_decay_iteration:  450
+  body_model: smpl
+  use_landmarks: SMPL_INDEX_LANDMARKS # either "All", name of dict from landmarks.py or list of landmark names ["Lt. 10th Rib", "Lt. Dactylion",..]
+
+fit_vertices_optimization:
+  loss_weight_option: default_option
+  max_iterations: 500
+  stop_at_loss_value: 0.0001
+  stop_at_loss_difference: 0.0001
+  use_landmarks: SMPL_INDEX_LANDMARKS # either "All", name of dict from landmarks.py or list of landmark names ["Lt. 10th Rib", "Lt. Dactylion",..]
+  seed: 0
+  random_init_A: True
+  use_losses:  ["data","smooth","landmark"]
+  lr: 1
+  normal_threshold_angle: null 
+  normal_threshold_distance: null 
+  partial_data_threshold: null
+
+general:
+  verbose: False
+  default_dtype: torch.float32
+  pause_script_after_fitting: True
+  experiment_name: "Fitting" 
+
+paths:
+  body_models_path: /SMPL-Fitting/data/body_models
+  prior_path: /SMPL-Fitting/data/prior
+  save_path: /SMPL-Fitting/results
+
+
+web_visualization:
+  socket_type: zmq
+  socket_port: 8055 # visualize on localhost:8050
+  error_curves_logscale: False
+  visualize: True 
+  visualize_steps: range(0, 500, 50)+[10,30,499]
+
+
+datasets:
+  FAUST:
+    data_dir: /SMPL-Fitting/data/FAUST/training
+    load_gt: False
+  CAESAR:
+    data_dir: /data/wear3d
+    load_countries: All
+    load_measurements: False
+    only_standing_pose: True
+    only_sitting_pose: False    

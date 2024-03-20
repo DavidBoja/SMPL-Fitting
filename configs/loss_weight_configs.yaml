@@ -1,0 +1,46 @@
+
+
+fit_bm_loss_weight_strategy:
+  
+    default_option: {0: {"data": 0.02,
+                        "landmark": 5,
+                        "prior": 0.001,
+                        "beta": 0.01},
+
+                    30: {"data": 0.02,
+                        "landmark": 2.5,
+                        "prior": 0.1,
+                        "beta": 0.01},
+
+                    100: {"data": 0.2,
+                        "landmark": 1.5,
+                        "prior": 0.1,
+                        "beta": 2},
+
+                    # fit shape
+                    200: {"data": 1,
+                        "landmark": 0.5,
+                        "prior": 0.1,
+                        "beta": 3},
+
+                    300: {"data": 1000,
+                        "landmark": 0.25,
+                        "prior": 0.1,
+                        "beta": 3}
+                }
+
+fit_verts_loss_weight_strategy:
+                
+      default_option: {
+            0: {"data": 150,
+                "smooth": 300,
+                "landmark": 100,
+                "normal": 150,
+                "interpenetration": 0},
+
+            100: {"data": 150,
+                "smooth": 150,
+                "landmark": 100,
+                "normal": 150,
+                "interpenetration": 0}
+            }

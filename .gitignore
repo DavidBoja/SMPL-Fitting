@@ -1,0 +1,3 @@
+.vscode
+pyTorchChamferDistance/chamfer_distance/__pycache__/*
+__pycache__/*

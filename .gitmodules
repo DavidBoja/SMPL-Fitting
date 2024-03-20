@@ -1,0 +1,3 @@
+[submodule "pyTorchChamferDistance"]
+	path = pyTorchChamferDistance
+	url = https://github.com/chrdiller/pyTorchChamferDistance.git
