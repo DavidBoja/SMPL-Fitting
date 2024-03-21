@@ -1,4 +1,4 @@
-# 𓀚 SMPL-Fitting
+# SMPL-Fitting
 
 Fit an SMPL body model (BM) to a given scan and view the optimization process in a plotly dashboard.  Fitting supported:
 -  🧍‍♂️ fit the body model parameters (shape, pose, translation, scale)
