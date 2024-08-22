@@ -2,8 +2,7 @@
 
 import torch
 
-
-
+    
 class OptimizationSMPL(torch.nn.Module):
     """
     Class used to optimize SMPL parameters.
@@ -11,11 +10,48 @@ class OptimizationSMPL(torch.nn.Module):
     def __init__(self, cfg: dict):
         super(OptimizationSMPL, self).__init__()
 
-        self.pose = torch.nn.Parameter(torch.zeros(1, 72).cuda())
-        # self.pose = torch.nn.Parameter(torch.zeros(1, 69).cuda())
-        self.beta = torch.nn.Parameter((torch.zeros(1, 10).cuda()))
-        self.trans = torch.nn.Parameter(torch.zeros(1, 3).cuda())
-        self.scale = torch.nn.Parameter(torch.ones(1).cuda()*1)
+        # self.pose = torch.nn.Parameter(torch.zeros(1, 72).cuda())
+        # self.beta = torch.nn.Parameter((torch.zeros(1, 10).cuda()))
+        # self.trans = torch.nn.Parameter(torch.zeros(1, 3).cuda())
+        # self.scale = torch.nn.Parameter(torch.ones(1).cuda()*1)
+
+        pose = torch.zeros(1, 72).cuda()
+        beta = torch.zeros(1, 10).cuda()
+        trans = torch.zeros(1, 3).cuda()
+        scale = torch.ones(1).cuda()*1
+
+        if "init_params" in cfg:
+            init_params = cfg["init_params"]
+            if "pose" in init_params:
+                pose = cfg["init_params"]["pose"].cuda()
+            if "shape" in init_params:
+                beta = cfg["init_params"]["shape"].cuda()
+
+            if "trans" in init_params:
+                trans = cfg["init_params"]["trans"].cuda()
+
+            if "scale" in init_params:
+                scale = cfg["init_params"]["scale"].cuda()
+        
+
+        if "refine_params" in cfg:
+            params_to_refine = cfg["refine_params"]
+            if "pose" in params_to_refine:
+                self.pose = torch.nn.Parameter(pose)
+            else:
+                self.pose = pose
+            if "shape" in params_to_refine:
+                self.beta = torch.nn.Parameter(beta)
+            else:
+                self.beta = beta
+            if "trans" in params_to_refine:
+                self.trans = torch.nn.Parameter(trans)
+            else:
+                self.trans = trans
+            if "scale" in params_to_refine:
+                self.scale = torch.nn.Parameter(scale)
+            else:
+                self.scale = scale
 
     def forward(self):
         return self.pose, self.beta, self.trans, self.scale
