@@ -23,11 +23,14 @@ class SMPLBodyModel():
     def __init__(self, cfg: dict):
         
         self.all_landmark_indices = SMPL_INDEX_LANDMARKS
+        self.gender = cfg["body_model_gender"].upper() if "body_model_gender" in cfg else "NEUTRAL"
         body_model_path = os.path.join(cfg["body_models_path"], 
-                                       "SMPL_NEUTRAL.pkl")
+                                       f"SMPL_{self.gender}.pkl")
+        self.num_betas = cfg.get("body_model_num_betas", 10)
         self.body_model = smplx.create(body_model_path, 
                                         model_type="SMPL",
-                                        gender="NEUTRAL", 
+                                        gender=self.gender, 
+                                        num_betas=self.num_betas,
                                         use_face_contour=False,
                                         ext='pkl')
         
