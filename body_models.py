@@ -102,7 +102,8 @@ class SMPLBodyModel():
                                          betas=betas, 
                                          global_orient=global_orient).vertices[0]
 
-        return (deformed_verts + trans) * scale
+        # return (deformed_verts + trans) * scale
+        return (deformed_verts * scale) + trans
 
 
 class BodyModel():
