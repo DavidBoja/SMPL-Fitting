@@ -219,7 +219,7 @@ You can use:
     Check [Notes](##-📝-Notes) section to find out the possible landmark definitions.
 3. Visualize fitting:
     ```bash
-    python visualization.py visualize_fitting --scan_path {path-to-scan} --fitted_npz_file {path-to-.npz-file}
+    python visualization.py visualize_fitting --scan_path {path-to-scan} --fit_paths {path-to-.npz-file}
     ```
     where the `.npz` is obtained with the fitting scripts.
 
@@ -336,7 +336,7 @@ python visualization.py visualize_scan_landmarks --scan_path data/demo/tr_scan_0
 
 Visualize the fitted vertices of the BM onto the FAUST scan:
 ```bash
-python visualization.py visualize_fitting --scan_path data/demo/tr_scan_000.ply --fitted_npz_file data/demo/tr_scan_000.npz
+python visualization.py visualize_fitting --scan_path data/demo/tr_scan_000.ply --fit_paths data/demo/tr_scan_000.npz
 ```
 
 <br>

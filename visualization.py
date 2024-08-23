@@ -8,6 +8,7 @@ import argparse
 import smplx
 import os
 from glob import glob
+import re
 
 import landmarks
 from utils import load_config, load_landmarks, load_scan
@@ -255,6 +256,49 @@ def viz_final_fit(input_scan_verts: torch.tensor,
 #               VIZ FUNCS                            #
 ######################################################
 
+def create_wireframe_plot(verts: np.ndarray,faces: np.ndarray):
+        '''
+        Given vertices and faces, creates a wireframe of plotly segments.
+        Used for visualizing the wireframe.
+        
+        :param verts: np.array (N,3) of vertices
+        :param faces: np.array (F,3) of faces connecting the verts
+        '''
+        i=faces[:,0]
+        j=faces[:,1]
+        k=faces[:,2]
+
+        triangles = np.vstack((i,j,k)).T
+
+        x=verts[:,0]
+        y=verts[:,1]
+        z=verts[:,2]
+
+        vertices = np.vstack((x,y,z)).T
+        tri_points = vertices[triangles]
+
+        #extract the lists of x, y, z coordinates of the triangle 
+        # vertices and connect them by a "line" by adding None
+        # this is a plotly convention for plotting segments
+        Xe = []
+        Ye = []
+        Ze = []
+        for T in tri_points:
+            Xe.extend([T[k%3][0] for k in range(4)]+[ None])
+            Ye.extend([T[k%3][1] for k in range(4)]+[ None])
+            Ze.extend([T[k%3][2] for k in range(4)]+[ None])
+
+        # return Xe, Ye, Ze 
+        wireframe = go.Scatter3d(
+                        x=Xe,
+                        y=Ye,
+                        z=Ze,
+                        mode='lines',
+                        name='wireframe',
+                        line=dict(color= 'rgb(70,70,70)', width=1)
+                        )
+        return wireframe
+
 def visualize_smpl_landmarks(**kwargs):
     cfg = load_config()
 
@@ -384,31 +428,35 @@ def visualize_scan_landmarks(scan_path,landmark_path, **kwargs):
     
     fig.show()
 
-def visualize_fitting(scan_path, fitted_npz_file, scale_scan=None, 
-                      return_fig=False, **kwargs):
+def visualize_fitting(scan_path, fit_paths, fit_nicknames=None, scale_scan=None, 
+                      return_fig=False, visualize_mesh_texture=False, **kwargs):
      
-    experiment_name = os.path.basename(os.path.dirname(fitted_npz_file))
-    verts, faces = load_scan(scan_path)
+    if visualize_mesh_texture:
+        verts, faces, verts_colors = load_scan(scan_path, 
+                                     return_vertex_colors=visualize_mesh_texture)
+    else:
+        verts, faces = load_scan(scan_path)
+        verts_colors = None
 
     if scale_scan:
        verts = verts / scale_scan 
 
     fig = go.Figure()
 
-    ## plot body
+    ## plot scan
     if isinstance(faces,type(None)):
         plot_body = go.Scatter3d(x = verts[:,0], 
-                                    y =verts[:,1], 
-                                    z = verts[:,2], 
-                        mode='markers',
-                        marker=dict(
-                            color="lightpink",
-                            size=8,
-                            line=dict(
-                                color='black',
-                                width=1)
-                                ),
-                        name="Scan")
+                                 y =verts[:,1], 
+                                 z = verts[:,2], 
+                                 mode='markers',
+                                 marker=dict(
+                                    color="lightpink",
+                                    size=8,
+                                    line=dict(
+                                        color='black',
+                                        width=1)
+                                        ),
+                                 name="Scan")
     else:
         plot_body = go.Mesh3d(
                             x=verts[:,0],
@@ -420,33 +468,75 @@ def visualize_fitting(scan_path, fitted_npz_file, scale_scan=None,
                             k=faces[:,2],
                             name='Scan',
                             showscale=True,
-                            opacity=0.7
+                            opacity=0.7,
+                            vertexcolor=verts_colors,
+                            flatshading=True
                             )
+        
+        ## add wireframe of scan
+        wireframe_plot = create_wireframe_plot(verts,faces)
+        fig.add_trace(wireframe_plot)
+
     fig.add_trace(plot_body)
 
 
-    fitted_data = np.load(fitted_npz_file)
-    fitted_verts = fitted_data["vertices"]
-    fitted_name = str(fitted_data["name"])
+    if not isinstance(fit_nicknames,type(None)):
+        if len(fit_nicknames) != len(fit_paths):
+            print("Number of fit_nicknames does not match number of fit_paths.")
+            print("Using names extracted from paths")
 
-    # plot fitted_verts
-    plot_fitted = go.Scatter3d(x = fitted_verts[:,0],
-                               y = fitted_verts[:,1],
-                               z = fitted_verts[:,2],
-                        mode='markers',
-                        marker=dict(
-                            color="blue",
-                            size=8,
-                            line=dict(
-                                color='black',
-                                width=1)
-                                ),
-                        name=fitted_name)
-    fig.add_trace(plot_fitted)
+    experiment_names = []
+    fitted_names = []
+    n_colors = len(fit_paths)
+    # want colors from 0.1 to 1 because below 0.1 is black
+    colors = px.colors.sample_colorscale("turbo", 
+                                         list(np.linspace(0.1, 1, n_colors))
+                                    # [0.1 + n/n_colors for n in range(n_colors)]
+                                    )
 
+    for i, fit_path in enumerate(fit_paths):
+
+        # find standard experiment name
+        experiment_name = re.search(r'\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}', fit_path)
+        if not isinstance(experiment_name,type(None)):
+            experiment_name = experiment_name.group(0)
+        else:
+            experiment_name = os.path.basename(os.path.dirname(fit_path))
+        experiment_names.append(experiment_name)
+
+        if not isinstance(fit_nicknames,type(None)):
+            viz_name = fit_nicknames[i]
+        else:
+            viz_name = experiment_name
+
+        fitted_data = np.load(fit_path)
+        fitted_verts = fitted_data["vertices"]
+        fitted_name = str(fitted_data["name"])
+        fitted_names.append(fitted_name)
+
+        # plot fitted_verts
+        plot_fitted = go.Scatter3d(x = fitted_verts[:,0],
+                                y = fitted_verts[:,1],
+                                z = fitted_verts[:,2],
+                            mode='markers',
+                            marker=dict(
+                                color=colors[i],
+                                size=8,
+                                line=dict(
+                                    color='black',
+                                    width=1)
+                                    ),
+                            name=viz_name)
+        fig.add_trace(plot_fitted)
+
+    if np.unique(fitted_names).shape[0] > 1:
+        raise ValueError("Visualizing fits for wrong scan.")
+
+    viz_title = f"Viz scan {fitted_name} and fitted bm from " + \
+                f"experiments {experiment_names}"
     fig.update_layout(scene_aspectmode='data',
-                    width=1000, height=700,
-                    title=f"Exp {experiment_name} - Scan {fitted_name} + fitted body model",
+                    width=1000, height=1000,
+                    title=viz_title,
                         )
     if return_fig:
         return fig
@@ -515,7 +605,15 @@ if __name__ == "__main__":
 
     parser_viz_fitting = subparsers.add_parser('visualize_fitting')
     parser_viz_fitting.add_argument("-S", "--scan_path", type=str, required=True)
-    parser_viz_fitting.add_argument("-F", "--fitted_npz_file", type=str, required=True)
+    parser_viz_fitting.add_argument("-F", "--fit_paths", required=True, 
+                                    nargs='+', default=[],
+                                    help="One or multiple paths to the fitted npz file \
+                                          you want to visualize.")
+    parser_viz_fitting.add_argument("--fit_nicknames", required=False, 
+                                    nargs='+', default=[],
+                                    help="More meaningful names for each experiment in the \
+                                          fit_paths you are visualizing.")
+    parser_viz_fitting.add_argument("--visualize_mesh_texture", action="store_true")
     parser_viz_fitting.add_argument("--scale_scan", type=float, required=False, default=1.0)
     parser_viz_fitting.set_defaults(func=visualize_fitting)
 
