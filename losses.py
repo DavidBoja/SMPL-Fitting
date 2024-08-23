@@ -22,7 +22,7 @@ LOSS_MAPPER = {"data":"DataLoss",
                }
 
 class DataLoss(nn.Module):
-    def __init__(self,cfg:dict,**kwargs):
+    def __init__(self,**kwargs):
         super(DataLoss, self).__init__()
         self.chamfer_dist = ChamferDistance()
 
@@ -41,10 +41,10 @@ class DataLoss(nn.Module):
     
 
 class PartialDataLoss(nn.Module):
-    def __init__(self,cfg:dict,**kwargs):
+    def __init__(self,partial_data_threshold: float,**kwargs):
         super(PartialDataLoss, self).__init__()
         self.chamfer_dist = ChamferDistance()
-        self.partial_data_threshold = cfg["partial_data_threshold"]
+        self.partial_data_threshold = partial_data_threshold
 
     def forward(self,scan_vertices,template_vertices,**kwargs):
         '''
@@ -52,7 +52,7 @@ class PartialDataLoss(nn.Module):
         Sum the distances from every point of the template to the closest point
         of the scan if the distance is lower than partial_data_threshold.
 
-         :param scan_vertices: (torch.tensor) of N x 3 dim
+        :param scan_vertices: (torch.tensor) of N x 3 dim
         :param template_vertices: (torch.tensor) of M x 3 dim
         return: (float) sum of distances from every point of the 
                         template to the closest point of the scan closer than
@@ -63,9 +63,8 @@ class PartialDataLoss(nn.Module):
 
 
 class SmoothnessLoss(nn.Module):
-    def __init__(self,cfg:dict,**kwargs):
+    def __init__(self,body_models_path: str,**kwargs):
         super(SmoothnessLoss, self).__init__()
-        body_models_path = cfg["body_models_path"]
 
         neighbor_pairs_path = os.path.join(body_models_path,
                                            "neighbor_pairs_indices.npy")
@@ -86,7 +85,7 @@ class SmoothnessLoss(nn.Module):
     
 
 class LandmarkLoss(nn.Module):
-    def __init__(self, cfg:dict, **kwargs):
+    def __init__(self, **kwargs):
         super(LandmarkLoss, self).__init__()
 
     def forward(self,scan_landmarks,template_landmarks,**kwargs):
@@ -104,10 +103,12 @@ class LandmarkLoss(nn.Module):
     
 
 class NormalLoss(nn.Module):
-    def __init__(self, cfg:dict):
+    def __init__(self, 
+                 normal_threshold_angle: float = None,
+                 normal_threshold_distance: float = None):
         super(NormalLoss, self).__init__()
-        self.normal_threshold_angle = cfg.get("normal_threshold_angle", None)
-        self.normal_threshold_distance = cfg.get("normal_threshold_distance", None)
+        self.normal_threshold_angle = normal_threshold_angle
+        self.normal_threshold_distance = normal_threshold_distance
 
     # def get_scan_normals(self,scan):
     #     self.scan_normals = get_normals(scan)
