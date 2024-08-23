@@ -340,7 +340,7 @@ class MaxMixturePrior(nn.Module):
 
         return weight_component + log_likelihoods[:, min_idx]
 
-    def forward(self, pose, betas):
+    def forward(self, pose, betas, **kwargs):
         if self.use_merged:
             return self.merged_log_likelihood(pose, betas)
         else:
