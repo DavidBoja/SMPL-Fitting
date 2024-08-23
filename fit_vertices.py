@@ -194,7 +194,7 @@ def fit_vertices_onto_dataset(cfg: dict):
     dataset_name = cfg["dataset_name"]
     cfg_dataset = cfg[dataset_name]
     cfg_dataset["use_landmarks"] = cfg["use_landmarks"]
-    dataset = eval(cfg["dataset_name"])(cfg_dataset)
+    dataset = eval(cfg["dataset_name"])(**cfg_dataset)
 
     wait_after_fit_func = input if cfg["pause_script_after_fitting"] else print
     wait_after_fit_func_text = "Fitting completed - press any key to continue!" \

@@ -19,27 +19,30 @@ class CAESAR(data.Dataset):
     z-ax is the height
     Returns vertices and landamrks in m, measurements in mm
     '''
-    def __init__(self, cfg: dict): 
+    def __init__(self, 
+                 data_dir: str,
+                 load_countries: str = "All",
+                 landmark_subset: str = None,
+                 load_measurements: bool = False,
+                 load_only_standing_pose: bool = False,
+                 load_only_sitting_pose: bool = False,
+                 **kwargs): 
         
         """
-        :param cfg (dict): dictionary with the following data
-
-            :param data_dir (str): path to caesar dataset
-            :param load_countries (str or list): countries to load. 
-                                                 If "All", all countries are loaded
-            :param use_landmarks (str or list): landmarks to use. If "All", all 
-                                                landmarks are loaded, if list of landmark names, 
-                                                only those are loaded
-            :param load_measurements (bool): whether to load measurements or not
-            :param only_standing_pose (bool): load only standing pose from CAESAR
-            :param only_sitting_pose (bool): load only sitting pose from CAESAR
+        :param data_dir (str): path to caesar dataset
+        :param load_countries (str or list): countries to load. 
+                                                If "All", all countries are loaded
+        :param use_landmarks (str or list): landmarks to use. If "All", all 
+                                            landmarks are loaded, if list of landmark names, 
+                                            only those are loaded
+        :param load_measurements (bool): whether to load measurements or not
+        :param only_standing_pose (bool): load only standing pose from CAESAR
+        :param only_sitting_pose (bool): load only sitting pose from CAESAR
         """
-        data_dir = cfg["data_dir"]
-        load_countries = cfg["load_countries"]
-        self.landmark_subset = cfg.get("use_landmarks",None)
-        self.load_measurements = cfg.get("load_measurements",None)
-        self.load_only_standing_pose = cfg.get("only_standing_pose",False)
-        self.load_only_sitting_pose = cfg.get("only_sitting_pose",False)
+        self.landmark_subset = landmark_subset
+        self.load_measurements = load_measurements
+        self.load_only_standing_pose = load_only_standing_pose
+        self.load_only_sitting_pose = load_only_sitting_pose
         
         # set loading countries
         all_countries = ["Italy","The Netherlands","North America"]
@@ -230,10 +233,13 @@ class FAUST(data.Dataset):
     FAUST dataset
     y-ax is the height
     '''
-    def __init__(self, cfg: dict): 
+    def __init__(self,
+                 data_dir: str,
+                 load_gt: bool = True,
+                 landmark_subset: str = None,
+                 **kwargs): 
         
         """
-        cfg: config dictionary with
         :param data_dir (str): path to caesar dataset
         :param load_gt (bool): whether to load ground truth fitting or not
                                 using registrations folder from FAUST as ground truth
@@ -243,9 +249,8 @@ class FAUST(data.Dataset):
                                             for the definition
 
         """
-        data_dir = cfg["data_dir"]
-        self.load_gt = cfg["load_gt"]
-        self.landmark_subset = cfg["use_landmarks"]
+        self.load_gt = load_gt
+        self.landmark_subset = landmark_subset
         self.gt_available = True
         
         self.gender = ["Male"] * 10 + \

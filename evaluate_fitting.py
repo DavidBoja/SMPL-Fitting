@@ -46,7 +46,7 @@ def evalute_pve(fitting_results_path, ground_truth_path, **kwargs):
         cfg_dataset = cfg[dataset_name]
         cfg_dataset["use_landmarks"] = cfg["use_landmarks"]
         cfg_dataset["load_gt"] = True
-        dataset = eval(cfg["dataset_name"])(cfg_dataset)
+        dataset = eval(cfg["dataset_name"])(**cfg_dataset)
 
         # chek if gt avaialable
         msg = "Ground truth for this dataset is not available"
@@ -181,7 +181,7 @@ def evaluate_chamfer(fitting_results_path, scan_path, device, **kwargs):
         cfg_dataset = cfg[dataset_name]
         cfg_dataset["use_landmarks"] = cfg["use_landmarks"]
         cfg_dataset["load_gt"] = False
-        dataset = eval(cfg["dataset_name"])(cfg_dataset)
+        dataset = eval(cfg["dataset_name"])(**cfg_dataset)
 
         N = len(dataset)
         selected_examples = kwargs["select_examples"]
