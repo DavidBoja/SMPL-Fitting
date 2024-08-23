@@ -105,82 +105,54 @@ class LandmarkLoss(nn.Module):
 class NormalLoss(nn.Module):
     def __init__(self, 
                  normal_threshold_angle: float = None,
-                 normal_threshold_distance: float = None):
+                **kwargs):
         super(NormalLoss, self).__init__()
+
         self.normal_threshold_angle = normal_threshold_angle
-        self.normal_threshold_distance = normal_threshold_distance
+        self.chamfer_dist = ChamferDistance()
 
-    # def get_scan_normals(self,scan):
-    #     self.scan_normals = get_normals(scan)
-
-    def forward(self, scan_vertices, template_vertices, 
-                scan_normals, template_normals,
-                K_knn=15, **kwargs):
+    def forward(self, 
+                scan_vertices, 
+                template_vertices, 
+                scan_normals, 
+                template_normals,
+                **kwargs):
         '''
-        For each template vertex i, find the K_knn nearest neighbors in the scan
+        For each template vertex i, find the closest nearest neighbors in the scan
         and compute the angle between their normals and the normal at template vertex i.
-        Choose the scan vertex with the smallest angle and compute the MSE between them.
-        
-        If using distance threshold, the template and scan vertices need to be closer 
-        than normal_threshold_distance in order to include them in the loss. 
-        If using angle threshold, the angle between the normals needs to be smaller 
-        than normal_threshold_angle in order to include them in the loss.
+        Use distance between points if angle below normal_threshold_angle
 
-        :param scan_vertices: (torch.tensor) dim 1 x N x 3
-        :param template_vertices: (torch.tensor) dim 1 x M x 3
+        :param scan_vertices: (torch.tensor) dim N x 3
+        :param template_vertices: (torch.tensor) dim M x 3
         :param scan_normals: (torch.tensor) dim N x 3
         :param template_normals: (torch.tensor) dim M x 3
-        :param K_knn: (int) number of nearest neighbors to consider
+        :param angle_threshold: (float) angle threshold between normals
         '''
 
         # N = scan_vertices.shape[0]
-        if len(template_vertices.shape) == 3:
-            template_vertices = template_vertices.squeeze()
-        if len(scan_vertices.shape) == 3:
-            scan_vertices = scan_vertices.squeeze()
-        M = template_vertices.shape[0]
 
-        scan_indices = []
-        template_indices = []
+        cd_result = self.chamfer_dist(scan_vertices,template_vertices)
+        # dist_scan2template = cd_result[0]
+        dist_template2scan = cd_result[1].squeeze()
+        # ind_scan2template = cd_result[2]
+        ind_template2scan = cd_result[3].long().squeeze()
 
-        # 1. find knn for each template vertex
-        for i in range(M):
-            template_vert_i = template_vertices[i,:].unsqueeze(0) # (1,3)
-            template_normal_i = template_normals[i,:].unsqueeze(0) # (1,3)
+        scan_normals_nn = scan_normals[ind_template2scan,:]
 
-            # knn
-            dist = torch.norm(scan_vertices - template_vert_i, dim=1) # (N)
-            if self.normal_threshold_distance:
-                if not any(dist < self.normal_threshold_distance):
-                    continue
-            scan_inds = torch.topk(dist,k=K_knn).indices # (K_knn)
-            scan_normals_knn = scan_normals[scan_inds,:] # (K_knn,3)
+        # inner_product = (a * b).sum(dim=1)
+        # a_norm = a.pow(2).sum(dim=1).pow(0.5)
+        # b_norm = b.pow(2).sum(dim=1).pow(0.5)
+        # cos = inner_product / (2 * a_norm * b_norm)
+        # angle = torch.acos(cos)
 
-            # FIXME: put this outside for loop?
-            # find angle between template normal and scan normals
-            dot_prod = torch.sum(torch.mul(scan_normals_knn,
-                                           template_normal_i),dim=1)
-            angle = torch.acos(torch.clamp(dot_prod,-1,1)) # (K_knn)
-            angle_deg = torch.rad2deg(angle) # (K_knn)
+        dot_prod = torch.sum(torch.mul(scan_normals_nn,
+                                        template_normals),dim=1)
+        angle = torch.acos(torch.clamp(dot_prod,-1,1)) # (K_knn)
+        angle_deg = torch.rad2deg(angle) # (K_knn)
 
-            # if not isinstance(normal_threshold, type(None)):
-            if self.normal_threshold_angle:
-                # check if angle is below threshold
-                if not any(angle_deg < self.normal_threshold_angle):
-                    continue
-            
-            # get the smallest angle
-            ind = torch.argmin(angle_deg).item()
-            # save original index from scan
-            scan_indices.append(scan_inds[ind])
-            template_indices.append(i)
+        inds = torch.where(angle_deg < self.normal_threshold_angle)[0]
 
-        scan_indices = torch.tensor(scan_indices)
-        # 2. mse loss between the found points
-        mse = torch.mean(torch.norm(scan_vertices[scan_indices,:] - 
-                                   template_vertices[template_indices,:],dim=1))
-        
-        return mse
+        return dist_template2scan[inds].sum()
     
 
 class Losses(nn.Module):
