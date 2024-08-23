@@ -29,6 +29,24 @@ fit_bm_loss_weight_strategy:
                         "beta": 3}
                 }
 
+    fourDhumanoutfit: {0: {"data": 5,
+                  "prior": 2.5,
+                  "normal": 3},
+
+                    # 30: {"data": 1,
+                    #     "prior": 0.1},
+
+                    # 100: {"data": 0.2,
+                    #     "prior": 0.1},
+
+                    # # fit shape
+                    # 200: {"data": 1,
+                    #     "prior": 0.1},
+
+                    # 300: {"data": 1000,
+                    #     "prior": 0.1}
+                }
+
 fit_verts_loss_weight_strategy:
                 
       default_option: {

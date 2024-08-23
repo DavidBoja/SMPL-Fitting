@@ -162,6 +162,38 @@ The dataset you want to fit needs to be defined in `datasets.py` as a torch data
 <br>
 
 
+
+### ↺ Refine fitting
+
+If you already have body model parameters (pose, shape, translation and scale) given, but they are not ideal, you can refine them.
+The optimization-specific configuration to refine the parmaeters is set under `refine_bm_fitting` in `config.yaml` with the following variables:
+
+- `iterations` - (int) number of iterations
+- `start_lr_decay_iteration` - (int) iteration when to start the learning rate decay calculated as `lr *(iterations-current iteration)/iterations`
+- `body_model` - (string) which BM to use (smpl, smplx,..). See [Notes](##-📝-Notes) for supported models
+- `use_landmarks` - (string / list) which body landmarks to use for fitting. Can be `nul` to not use landmarks, `All` to use all possible landmarks, `{BM}_INDEX_LANDMARKS` defined in landmarks.py, or list of landmark names e.g. `["Lt. 10th Rib", "Lt. Dactylion",..]` defined in landmarks.py
+- `refine_params` - (list of strings) of parameters you want to refine, can contiain: pose, shape, transl, scale
+- `use_losses` - (list) losses to use. The complete list of losses is `["data","smooth","landmark","normal","partial_data"]`. Check [notes on losses](##-📝-Notes).
+- `loss_weight_option` - (string) the strategy for the loss weights, defined in `loss_weights_configs.yaml` under `fit_verts_loss_weight_strategy`
+- `prior_folder` - (string) path to the gmm prior loss .pkl file
+- `num_gaussians` - (float) number of gaussians to use for the prior
+- `lr` - (float) learning rate
+- `normal_threshold_angle` - (float) used if normal loss included in `use_losses`. Penalizes knn points only if angle is lower than this threshold. Otherwise points are ignored
+
+<br>
+
+
+
+#### 👥 Refine parameters fitted to dataset
+
+```bash
+python refine_fitting.py onto_dataset --dataset_name {dataset-name}
+```
+
+<br>
+<br>
+
+
 ## ⚖️ Evaluate
 Use the `evaluate_fitting.py` script to evaluate the fitting.
 
@@ -275,7 +307,14 @@ If you additionally want to evaluate the per vertex error (pve) after fitting (c
 - `vertices_gt` - (np.ndarray) ground truth vertices of the BM
 - `faces_gt` - (np.ndarray) ground truth faces of the BM
 
-We provide the FAUST and CAESAR dataset implementations in `datasets.py`. You can obtain the datasets from [here](https://faust-leaderboard.is.tuebingen.mpg.de/) and [here](https://bodysizeshape.com/page-1855750).
+If you want to refine the parameters that have already been fitted, the dataset needs to additionally return:
+
+- `pose` - (torch.tensor) fitted pose parameters dim 1 x 72
+- `shape` - (torch.tensor) fitted shape parameters dim 1 x 10
+- `trans` - (torch.tensor) fitted translation dim 1 x 3
+- `gender` - (str) gender of the body model
+
+We provide the FAUST and CAESAR and 4DHumanOutfit dataset implementations in `datasets.py`. You can obtain the datasets from [here](https://faust-leaderboard.is.tuebingen.mpg.de/), [here](https://bodysizeshape.com/page-1855750) and [here](https://kinovis.inria.fr/4dhumanoutfit/).
 
 <br>
 

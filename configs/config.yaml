@@ -22,6 +22,19 @@ fit_vertices_optimization:
   normal_threshold_distance: null 
   partial_data_threshold: null
 
+refine_bm_fitting:
+  loss_weight_option: fourDhumanoutfit # check options in loss_weight_configs.yaml
+  iterations: 500
+  lr: 0.01
+  start_lr_decay_iteration:  450
+  body_model: smpl
+  use_landmarks: null # either "All", name of dict from landmarks.py or list of landmark names ["Lt. 10th Rib", "Lt. Dactylion",..]
+  refine_params: ["pose"] #["pose", "shape", "transl", "scale"]
+  use_losses: ["normal"]
+  prior_folder: /SMPL-Fitting/data/prior
+  num_gaussians: 8
+  normal_threshold_angle: 30
+
 general:
   verbose: False
   default_dtype: torch.float32
