@@ -58,7 +58,7 @@ class PartialDataLoss(nn.Module):
                         template to the closest point of the scan closer than
                         partial_data_threshold
         '''
-        _, template2scan_dist = self.chamfer_dist(scan_vertices,template_vertices)
+        _, template2scan_dist, _ , _ = self.chamfer_dist(scan_vertices,template_vertices)
         return template2scan_dist[template2scan_dist < self.partial_data_threshold].sum()
 
 

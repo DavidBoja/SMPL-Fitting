@@ -124,7 +124,7 @@ def fit_body_model(input_dict: dict, cfg: dict):
                                                    scale)
 
         # compute losses
-        dist1, dist2 = chamfer_distance(body_model_verts.unsqueeze(0), input_vertices)
+        dist1, dist2, _ , _ = chamfer_distance(body_model_verts.unsqueeze(0), input_vertices)
         data_loss = (torch.mean(dist1)) + (torch.mean(dist2))
         data_loss_weighted = data_loss_weight * data_loss
         landmark_loss = summed_L2(body_model_verts[body_model_landmark_inds,:], input_landmarks)

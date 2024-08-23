@@ -222,7 +222,7 @@ def evaluate_chamfer(fitting_results_path, scan_path, device, **kwargs):
 
             # compute chamfer
             # dist 1 is 1 x 6890 - chamfer_distance does not return euclidean distance but squared distance
-            dist1, dist2 = chamfer_distance(fit_verts.to(device), scan_vertices.to(device))
+            dist1, dist2, _, _ = chamfer_distance(fit_verts.to(device), scan_vertices.to(device))
             chamfer_standard += (torch.mean(dist1) + torch.mean(dist2)).detach().cpu().item()
             chamfer_bidirectional_average += torch.mean(torch.cat([dist1[0],dist2[0]])).detach().cpu().item()
             chamfer_bm2scan += torch.mean(torch.sqrt(dist1)).detach().cpu().item()
@@ -259,7 +259,7 @@ def evaluate_chamfer(fitting_results_path, scan_path, device, **kwargs):
         fit_verts = torch.from_numpy(fit_verts).unsqueeze(0).float()
 
         # compute chamfer
-        dist1, dist2 = chamfer_distance(fit_verts.to(device), scan_verts.to(device))
+        dist1, dist2, _ , _ = chamfer_distance(fit_verts.to(device), scan_verts.to(device))
         chamfer_standard = (torch.mean(dist1) + torch.mean(dist2)).detach().cpu().item()
         chamfer_bidirectional_average = torch.mean(torch.cat([dist1,dist2])).detach().cpu().item()
         chamfer_bm2scan = torch.mean(torch.sqrt(dist1)).detach().cpu().item()
