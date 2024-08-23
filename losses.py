@@ -171,7 +171,7 @@ class Losses(nn.Module):
 
         self.loss_fns = {}
         for loss_name in self.loss_names:
-            loss_fn = eval(LOSS_MAPPER[loss_name])(cfg) 
+            loss_fn = eval(LOSS_MAPPER[loss_name])(**cfg) 
             self.loss_fns[loss_name] = loss_fn
     
 
