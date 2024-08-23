@@ -236,7 +236,8 @@ def process_dataset_name(cfg:dict):
 #############################################################
 
 def create_results_directory(save_path: str = "/SMPL-Fitting/results",
-                             continue_run: str = None):
+                             continue_run: str = None,
+                             sequences: List[str] = None):
     """
     Save results in save_path/YYYY_MM_DD_HH_MM_SS folder.
     If continue_run is folder of type YYYY_MM_DD_HH_MM_SS, then
@@ -264,6 +265,12 @@ def create_results_directory(save_path: str = "/SMPL-Fitting/results",
             os.makedirs(save_path)
     
     print(f"Saving results to {save_path}")
+
+    if not isinstance(sequences,type(None)):
+        for seq in sequences:
+            seq_path = os.path.join(save_path,seq)
+            if not os.path.exists(seq_path):
+                os.makedirs(seq_path)
 
     return save_path
 
