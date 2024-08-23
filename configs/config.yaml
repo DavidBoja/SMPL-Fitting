@@ -51,4 +51,11 @@ datasets:
     load_countries: All
     load_measurements: False
     only_standing_pose: True
-    only_sitting_pose: False    
+    only_sitting_pose: False
+  FourDHumanOutfit:
+    dataset_path: /data/KINOVIS/sequences
+    parameters_path: /data/KINOVIS/rim-datacube
+    landmarks_path: /data/KINOVIS/rim-datacube
+    sequence_list: ["deb-tig-walk"]
+    body_model_path: /SMPL-Fitting/data/body_models
+    num_betas: 8

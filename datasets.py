@@ -11,6 +11,8 @@ import open3d as o3d
 import numpy as np
 import tempfile
 import pandas as pd
+import torch
+import smplx
     
 
 class CAESAR(data.Dataset):
@@ -334,6 +336,185 @@ class FAUST(data.Dataset):
             return_dict.update(registration_dict)
         
         return return_dict
+
+    def __len__(self):
+        return self.dataset_size
+
+
+class FourDHumanOutfit(data.Dataset):
+    '''
+    FourDHumanOutfit dataset
+    '''
+    def __init__(self, 
+                 dataset_path: str,
+                 parameters_path: str = None,
+                 landmarks_path: str = None,
+                 sequence_list: List[str] = None,
+                #  pelvis_normalization: bool = False,
+                #  use_landmarks: str = "SMPL_INDEX_LANDAMRKS_REVISED",
+                 transferred_landmarks_name: str = "simple",
+                 body_model_path: str = "/SMPL-Fitting/data/body_models",
+                 num_betas: int = 8,
+                 **kwargs):
+        
+        """
+        Loading 4DHumanOutfit dataset
+        Expecint the following structure:
+            smpl params save as: parameters_path/subj_name/subj_name-clothing_type-action_name/param.pt
+            scans save as: dataset_path/subj_name/subj_name-clothing_type-action_name/*/scan.obj
+            landmarks save as: landmarks_path/subj_name/subj_name-clothing_type-action_name/landmarks_{transferred_landmarks_name}.pt
+
+        :param dataset_path: (str) path to FourDHumanOutfit scans
+        :param parameters_path: (str) path to the directory where the already
+                                 fitted SMPL parameters are stored
+        :param sequence_list: (List[str]) list of sequences to load. 
+                                If "All", all sequences are loaded
+        """
+        # hidden are flo i luc
+        all_male_subjects = ["ben","bob","jon","leo","mat","pat","ray","ted","tom"]
+        all_female_subjects = ["ada","bea","deb","gia","joy","kim","mia","sue","zoe"]
+        all_subjects_names = all_male_subjects + all_female_subjects
+        
+        # create gender mapper
+        all_genders = ["male"] * len(all_male_subjects) + ["female"] * len(all_female_subjects)
+        self.gender_mapper = dict(zip(all_subjects_names,all_genders))
+
+        if not isinstance(sequence_list, type(None)):
+            use_subjects = [seq.split("-")[0] for seq in sequence_list]
+        else:
+            use_subjects = all_subjects_names
+
+        self.load_parameters = False if isinstance(parameters_path, type(None)) else True
+        self.load_landmarks = False if isinstance(landmarks_path, type(None)) else True
+
+        self.scan_paths = []
+        self.subject_names = []
+        self.action_names = []
+        self.sequence_names = []
+        self.poses = []
+        self.shapes = []
+        self.trans = []
+        self.genders = []
+        self.landmarks = []
+
+        for subj_name in all_subjects_names:
+            if subj_name in use_subjects:
+                if self.load_parameters:
+                    all_subj_action_paths = glob(os.path.join(parameters_path,subj_name,f"{subj_name}-*"))
+                else:
+                    all_subj_action_paths = glob(os.path.join(dataset_path,subj_name,f"{subj_name}-*"))
+
+                for subj_action_path in all_subj_action_paths:
+                    action_name = os.path.basename(subj_action_path).split("-")[-1]
+                    clothing_name = os.path.basename(subj_action_path).split("-")[-2]
+                    sequence_name = f"{subj_name}-{clothing_name}-{action_name}"
+
+                    if not isinstance(sequence_list, type(None)):
+                        if sequence_name not in sequence_list:
+                            continue
+
+                    # load scans
+                    all_seq_scan_paths = sorted(glob(os.path.join(dataset_path,subj_name,sequence_name,"*/*.obj")))
+
+                    # load landmarks
+                    if self.load_landmarks:
+                        all_seq_lm_path = os.path.join(landmarks_path,subj_name,sequence_name,f"landmarks_{transferred_landmarks_name}.pt")
+                        if os.path.exists(all_seq_lm_path):
+                            all_seq_landmarks = torch.load(all_seq_lm_path,map_location=torch.device("cpu"))
+
+
+                    if self.load_parameters:
+                        # load fitted parameters
+                        all_seq_poses = torch.load(os.path.join(subj_action_path,"poses.pt"),
+                                                        map_location=torch.device("cpu")).detach().cpu()
+                        all_seq_shapes = torch.load(os.path.join(subj_action_path,"betas.pt"),
+                                                        map_location=torch.device("cpu")).detach().cpu()
+                        all_seq_trans = torch.load(os.path.join(subj_action_path,"trans.pt"),
+                                                        map_location=torch.device("cpu")).detach().cpu()
+                        all_seq_gender = self.gender_mapper[subj_name]
+
+                    N_frames = len(all_seq_scan_paths) #all_seq_poses.shape[0]
+
+                    for frame_ind in range(N_frames):
+                        self.scan_paths.append(all_seq_scan_paths[frame_ind])
+                        self.subject_names.append(subj_name)
+                        self.action_names.append(action_name)
+                        self.sequence_names.append(sequence_name)
+                        if self.load_parameters:
+                            self.poses.append(all_seq_poses[frame_ind])#.unsqueeze(0).detach().cpu())
+                            self.shapes.append(all_seq_shapes[frame_ind])#.unsqueeze(0).detach().cpu())
+                            self.trans.append(all_seq_trans[frame_ind])#.unsqueeze(0).detach().cpu())
+                            self.genders.append(all_seq_gender)
+                        if self.load_landmarks:
+                            self.landmarks.append(all_seq_landmarks[frame_ind])#.unsqueeze(0).detach().cpu())
+                
+
+        self.dataset_size = len(self.scan_paths)
+
+        # create body models
+        self.bms = {
+            "MALE": smplx.create(body_model_path,
+                                 model_type="SMPL",
+                                gender="MALE", 
+                                num_betas=num_betas,
+                                use_face_contour=False,
+                                ext='pkl'),
+            "FEMALE": smplx.create(body_model_path,
+                                 model_type="SMPL",
+                                gender="FEMALE", 
+                                num_betas=num_betas,
+                                use_face_contour=False,
+                                ext='pkl'),
+            "NEUTRAL": smplx.create(body_model_path,
+                                 model_type="SMPL",
+                                gender="NEUTRAL", 
+                                num_betas=num_betas,
+                                use_face_contour=False,
+                                ext='pkl'),
+        }
+
+
+    def __getitem__(self, index):
+        """
+        :return (dict): dictionary
+        """
+
+        # load scan
+        scan_path = self.scan_paths[index]
+        sequence_name = self.sequence_names[index] #scan_path.split("/")[-2]
+        scan_name = os.path.basename(scan_path).split(".obj")[0]
+        scan = o3d.io.read_triangle_mesh(scan_path)
+        scan_vertices = torch.from_numpy(np.asarray(scan.vertices))
+        scan_faces = torch.from_numpy(np.asarray(scan.triangles))
+        scan_faces = scan_faces if scan_faces.shape[0] > 0 else None
+        if self.load_parameters:
+            scan_landmarks = self.landmarks[index]
+        scan_gender = self.genders[index].upper()
+
+        # create fitting
+        if self.load_parameters:
+            fit_pose = self.poses[index].unsqueeze(0)
+            fit_shape = self.shapes[index].unsqueeze(0)
+            fit_trans = self.trans[index].unsqueeze(0)
+            fit = self.bms[scan_gender](body_pose=fit_pose[:,3:],
+                                        betas=fit_shape,
+                                        global_orient=fit_pose[:,:3],
+                                        transl=fit_trans,
+                                        pose2rot=True).vertices[0].detach().cpu()
+            # fit = fit + fit_trans
+
+
+        return {"name": f"{sequence_name}-{scan_name}",
+                "sequence_name": sequence_name,
+                "vertices": scan_vertices,
+                "faces": scan_faces,
+                "landmarks": scan_landmarks,
+                "pose": self.poses[index],
+                "shape": self.shapes[index],
+                "trans": self.trans[index],
+                "gender": self.genders[index],
+                "fit":fit}
+
 
     def __len__(self):
         return self.dataset_size
