@@ -9,7 +9,7 @@ import torch
 from body_models import BodyModel, infer_body_model
 
 from utils import load_config, load_scan, process_body_model_path
-from datasets import FAUST, CAESAR
+from datasets import FAUST, CAESAR, FourDHumanOutfit
 from visualization import visualize_pve
 
 import sys
@@ -200,6 +200,8 @@ def evaluate_chamfer(fitting_results_path, scan_path, device, **kwargs):
             if isinstance(scan_vertices, type(None)):
                 continue
             scan_vertices = torch.from_numpy(scan_vertices).unsqueeze(0).float()
+            scan_sequence = input_scan["sequence_name"] \
+                            if "sequence_name" in input_scan.keys() else ""
             scan_name = input_scan["name"]
 
             if not isinstance(selected_examples,type(None)):
@@ -208,6 +210,7 @@ def evaluate_chamfer(fitting_results_path, scan_path, device, **kwargs):
 
             # check if fit available
             fit_path = os.path.join(fitting_results_path, 
+                                    scan_sequence,
                                     f"{scan_name}.npz")
             if not os.path.exists(fit_path):
                 continue
