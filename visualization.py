@@ -19,7 +19,7 @@ from utils import load_config, load_landmarks, load_scan
 def set_init_plot(input_scan: torch.tensor,
                   initial_body_model: torch.tensor,
                   title: str = "Optimization", 
-                  K: int = 100):
+                  subsample_input_scan_verts: int = 100):
     """
     Plot the initial plotly figure for the optimization.
     Plotting the input scan as point cloud
@@ -27,6 +27,9 @@ def set_init_plot(input_scan: torch.tensor,
 
     :param input_scan: (torch.tensor) of dim (N,3)
     :param initial_body_model: (torch.tensor) of dim (M,3)
+    :param title: (str) title of the plot
+    :param subsample_input_scan_verts: (int) plot every 
+                                     k-th vertex
 
     :return fig: updated plotly figure
     """
@@ -34,9 +37,9 @@ def set_init_plot(input_scan: torch.tensor,
 
     fig = go.Figure()
 
-    fig.add_trace(go.Scatter3d(x = input_scan[::K,0], 
-                                y = input_scan[::K,1], 
-                                z = input_scan[::K,2], 
+    fig.add_trace(go.Scatter3d(x = input_scan[::subsample_input_scan_verts,0], 
+                                y = input_scan[::subsample_input_scan_verts,1], 
+                                z = input_scan[::subsample_input_scan_verts,2], 
                     mode='markers',
                     marker=dict(
                         color='lightpink',
