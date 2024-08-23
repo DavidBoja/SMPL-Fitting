@@ -712,7 +712,7 @@ def load_landmarks(landmark_path: str,
 
     return landmarks
 
-def load_scan(scan_path):
+def load_scan(scan_path, return_vertex_colors=False):
     """
     Load scan given its scan_path using open3d. 
     Scan can be defined as:
@@ -725,13 +725,16 @@ def load_scan(scan_path):
 
     ext = scan_path.split(".")[-1]
     ext_extended = f"{scan_path.split('.')[-2]}.{ext}"
-    supported_extensions = [".ply",".ply.gz"]
+    supported_extensions = [".ply",".ply.gz", ".obj"]
 
-    if ext == "ply":
+    if ext in ["ply", "obj"]:
         scan = o3d.io.read_triangle_mesh(scan_path)
         scan_vertices = np.asarray(scan.vertices)
         scan_faces = np.asarray(scan.triangles)
         scan_faces = scan_faces if scan_faces.shape[0] > 0 else None
+        if return_vertex_colors:
+            scan_vertex_colors = np.asarray(scan.vertex_colors)
+            print(scan_vertex_colors.shape)
 
     elif ext_extended == "ply.gz":
         with gzip.open(scan_path, 'rb') as gz_file:
@@ -748,6 +751,8 @@ def load_scan(scan_path):
             scan_vertices = np.asarray(scan.vertices)
             scan_faces = np.asarray(scan.triangles)
             scan_faces = scan_faces if scan_faces.shape[0] > 0 else None
+            if return_vertex_colors:
+                scan_vertex_colors = np.asarray(scan.vertex_colors)
             os.remove(temp_ply_path)
 
     else:
@@ -755,7 +760,10 @@ def load_scan(scan_path):
         msg = f"Scan extensions supported: {supported_extensions_str}. Got .{ext}."
         raise ValueError(msg)
 
-    return scan_vertices, scan_faces
+    if return_vertex_colors:
+        return scan_vertices, scan_vertex_colors
+    else:
+        return scan_vertices, scan_faces
 
 def load_fit(path):
 
