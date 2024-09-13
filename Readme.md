@@ -1,14 +1,15 @@
 # SMPL-Fitting
 
+
+<p align="center">
+  <img src="https://github.com/DavidBoja/SMPL-Fitting/blob/master/assets/smpl_fitting_banner.png" width="950">
+</p>
+
 Fit an SMPL body model (BM) to a given scan and view the optimization process in a plotly dashboard.  Fitting supported:
 -  🧍‍♂️ fit the body model parameters (shape, pose, translation, scale)
 -  🤹 fit the vertices to the scan
 
 The code supports fitting a single scan 👤 or a whole dataset 👥.
-
-<p align="center">
-  <img src="https://github.com/DavidBoja/SMPL-Fitting/blob/master/assets/smpl_fitting_banner.png" width="950">
-</p>
 
 <br>
 
