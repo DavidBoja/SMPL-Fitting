@@ -11,7 +11,7 @@ Flask-SocketIO
 trimesh==3.23.5
 Ninja
 openpyxl
-torch==1.10.0
+torch==1.9.1
 torchelastic==0.2.0
 torchtext==0.11.0
 torchvision==0.11.1
