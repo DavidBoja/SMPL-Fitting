@@ -52,6 +52,11 @@ class OptimizationSMPL(torch.nn.Module):
                 self.scale = torch.nn.Parameter(scale)
             else:
                 self.scale = scale
+        else:
+            self.pose = torch.nn.Parameter(pose)
+            self.beta = torch.nn.Parameter(beta)
+            self.trans = torch.nn.Parameter(trans)
+            self.scale = torch.nn.Parameter(scale)
 
     def forward(self):
         return self.pose, self.beta, self.trans, self.scale
